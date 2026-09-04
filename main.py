@@ -161,6 +161,19 @@ def ask(req: AskRequest):
     except Exception as e:
         logger.error("vLLM hatası: %s", e)
         cevap_metni = f"[vLLM hatası: {e}]"
+        return AskResponse(Response=cevap_metni)
+
+    if kaynaklar:
+        en_iyi = kaynaklar[0]
+        if en_iyi["kaynak_tur"] == "pdf" and en_iyi.get("sayfalar"):
+            kaynak_notu = f"(Kaynak: {en_iyi['baslik']}, sayfa {en_iyi['sayfalar'][0]})"
+        elif en_iyi.get("baslangic_sn") is not None:
+            dk = int(en_iyi["baslangic_sn"] // 60)
+            sn = int(en_iyi["baslangic_sn"] % 60)
+            kaynak_notu = f"(Kaynak: {en_iyi['baslik']}, {dk}:{sn:02d})"
+        else:
+            kaynak_notu = f"(Kaynak: {en_iyi['baslik']})"
+        cevap_metni = f"{cevap_metni}\n\n{kaynak_notu}"
 
     return AskResponse(Response=cevap_metni)
 
