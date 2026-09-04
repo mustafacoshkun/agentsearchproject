@@ -53,7 +53,8 @@ QDRANT_HOST = "localhost"
 QDRANT_PORT = 6333
 EMBED_MODEL = "BAAI/bge-m3"
 SKOR_ESIGI = 0.45
-MAX_CHUNK = 4  # vLLM max-model-len 2048 olduğu için düşük tutuyoruz
+MAX_CHUNK = 8  # üst sınır, gerçek sınır aşağıdaki karakter bütçesiyle belirlenir
+BAGLAM_KARAKTER_BUTCESI = 5000  # yaklaşık 1300 token, 2048 limitinden pay bırakır
 
 VLLM_URL = "http://10.106.250.94:8000/v1/chat/completions"
 VLLM_MODEL = "ogretmen"
@@ -112,7 +113,15 @@ def ask(req: AskRequest):
         logger.error("Qdrant hatası: %s", e)
         return AskResponse(Response=f"[Qdrant hatası: {e}]")
 
-    ilgili = [s for s in sonuclar if s.score >= SKOR_ESIGI][:MAX_CHUNK]
+    aday = [s for s in sonuclar if s.score >= SKOR_ESIGI][:MAX_CHUNK]
+    ilgili = []
+    toplam_karakter = 0
+    for s in aday:
+        uzunluk = len(s.payload.get("metin", ""))
+        if ilgili and toplam_karakter + uzunluk > BAGLAM_KARAKTER_BUTCESI:
+            break
+        ilgili.append(s)
+        toplam_karakter += uzunluk
     logger.info("Bulunan chunk sayısı: %d (eşik üstü: %d)", len(sonuclar), len(ilgili))
 
     if not sonuclar:
@@ -125,7 +134,7 @@ def ask(req: AskRequest):
 
         if basliklar:
             liste = ", ".join(basliklar)
-            mesaj = f"Bu sayfada bu konuda içeriğim yok. Şu an şu konularda sorularını cevaplayabilirim: {liste}."
+            mesaj = "Bu konu için henüz hazırlanmış bir içeriğim yok."
         else:
             mesaj = "Bu sayfada henüz bir içerik bulunmuyor."
 
@@ -176,9 +185,14 @@ def ask(req: AskRequest):
         cevap_metni = yanit.json()["choices"][0]["message"]["content"]
         cevap_metni = temizle_think_blogu(cevap_metni)
         cevap_metni = temizle_uydurma_kaynak(cevap_metni)
+    except requests.exceptions.HTTPError as e:
+        detay = e.response.text if e.response is not None else str(e)
+        logger.error("vLLM hatası: %s | Detay: %s", e, detay)
+        cevap_metni = "Bu soruya şu an cevap üretemedim, lütfen tekrar dener misin?"
+        return AskResponse(Response=cevap_metni)
     except Exception as e:
         logger.error("vLLM hatası: %s", e)
-        cevap_metni = f"[vLLM hatası: {e}]"
+        cevap_metni = "Bu soruya şu an cevap üretemedim, lütfen tekrar dener misin?"
         return AskResponse(Response=cevap_metni)
 
     if kaynaklar:
