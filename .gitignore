@@ -1,0 +1,6 @@
+__pycache__/
+*.log
+*.gguf
+out_pkl/
+out_txt/
+icerik/
