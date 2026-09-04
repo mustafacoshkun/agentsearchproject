@@ -183,14 +183,20 @@ def ask(req: AskRequest):
 
     if kaynaklar:
         en_iyi = kaynaklar[0]
-        if en_iyi["kaynak_tur"] == "pdf" and en_iyi.get("sayfalar"):
-            kaynak_notu = f"(Kaynak: {en_iyi['baslik']}, sayfa {en_iyi['sayfalar'][0]})"
-        elif en_iyi.get("baslangic_sn") is not None:
+        tur = en_iyi["kaynak_tur"]
+        if tur == "pdf" and en_iyi.get("sayfalar"):
+            sayfa = en_iyi["sayfalar"][0]
+            kaynak_notu = f"📄 Konu özeti dokümanının {sayfa}. sayfasına bakabilirsin."
+        elif tur == "video" and en_iyi.get("baslangic_sn") is not None:
             dk = int(en_iyi["baslangic_sn"] // 60)
             sn = int(en_iyi["baslangic_sn"] % 60)
-            kaynak_notu = f"(Kaynak: {en_iyi['baslik']}, {dk}:{sn:02d})"
+            kaynak_notu = f"🎥 Konu anlatım videosunda {dk}:{sn:02d} civarını izleyebilirsin."
+        elif tur == "ses" and en_iyi.get("baslangic_sn") is not None:
+            dk = int(en_iyi["baslangic_sn"] // 60)
+            sn = int(en_iyi["baslangic_sn"] % 60)
+            kaynak_notu = f"🎧 Sesli özette {dk}:{sn:02d} civarını tekrar dinleyebilirsin."
         else:
-            kaynak_notu = f"(Kaynak: {en_iyi['baslik']})"
+            kaynak_notu = f"Bu konu \"{en_iyi['baslik']}\" başlığında anlatılıyor."
         cevap_metni = f"{cevap_metni}\n\n{kaynak_notu}"
 
     return AskResponse(Response=cevap_metni)
