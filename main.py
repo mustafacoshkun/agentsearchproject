@@ -30,6 +30,23 @@ def temizle_think_blogu(metin: str) -> str:
     temiz = re.sub(r"<think>.*?</think>\s*", "", metin, flags=re.DOTALL)
     return temiz.strip()
 
+
+def temizle_uydurma_kaynak(metin: str) -> str:
+    """Modelin kendiliginden ekledigi (Video: ...), (Sayfa: ...) gibi
+    uydurma kaynak referanslarini temizler. Gercek kaynak notu ayrica
+    kod tarafindan eklenir."""
+    desenler = [
+        r"\(Video[:\s][^)]*\)",
+        r"\(Sayfa[:\s][^)]*\)",
+        r"\(Kaynak[:\s][^)]*\)",
+        r"\([Dd]akika[:\s][^)]*\)",
+    ]
+    temiz = metin
+    for desen in desenler:
+        temiz = re.sub(desen, "", temiz)
+    temiz = re.sub(r"\s+", " ", temiz).strip()
+    return temiz
+
 # ---------- ayarlar ----------
 
 QDRANT_HOST = "localhost"
@@ -158,6 +175,7 @@ def ask(req: AskRequest):
         yanit.raise_for_status()
         cevap_metni = yanit.json()["choices"][0]["message"]["content"]
         cevap_metni = temizle_think_blogu(cevap_metni)
+        cevap_metni = temizle_uydurma_kaynak(cevap_metni)
     except Exception as e:
         logger.error("vLLM hatası: %s", e)
         cevap_metni = f"[vLLM hatası: {e}]"
