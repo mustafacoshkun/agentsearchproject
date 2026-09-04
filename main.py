@@ -104,7 +104,7 @@ def ask(req: AskRequest):
             collection_name=ad,
             query=soru_vektoru.tolist(),
             query_filter=Filter(
-                must=[FieldCondition(key="konu_id", match=MatchValue(value=req.KonuId))]
+                must=[FieldCondition(key="konu_id", match=MatchValue(value=req.KonuId.upper()))]
             ),
             limit=limit,
         ).points
