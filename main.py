@@ -36,14 +36,15 @@ def temizle_uydurma_kaynak(metin: str) -> str:
     uydurma kaynak referanslarini temizler. Gercek kaynak notu ayrica
     kod tarafindan eklenir."""
     desenler = [
-        r"\(Video[:\s][^)]*\)",
-        r"\(Sayfa[:\s][^)]*\)",
-        r"\(Kaynak[:\s][^)]*\)",
-        r"\([Dd]akika[:\s][^)]*\)",
+        r"\(video[:\s,][^)]*\)",
+        r"\(sayfa[:\s,][^)]*\)",
+        r"\(kaynak[:\s,][^)]*\)",
+        r"\(dakika[:\s,][^)]*\)",
+        r"\(ses(li)?[:\s,][^)]*\)",
     ]
     temiz = metin
     for desen in desenler:
-        temiz = re.sub(desen, "", temiz)
+        temiz = re.sub(desen, "", temiz, flags=re.IGNORECASE)
     temiz = re.sub(r"\s+", " ", temiz).strip()
     return temiz
 
